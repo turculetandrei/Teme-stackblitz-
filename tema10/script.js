@@ -1,54 +1,93 @@
-let buton = document.getElementById("butonStart");
-let mesaj = document.getElementById("mesaj");
-let rezultat = document.getElementById("rezultat");
+let test;
 
-let putemClick = false;
-let timpStart = 0;
-let asteptare;
-
-function startTest() {
-    mesaj.textContent = "Așteaptă culoarea verde...";
-    document.body.style.backgroundColor = "gray";
-    rezultat.textContent = "";
-    buton.style.display = "none";
-
-    let timpAleatoriu = Math.random() * 3000 + 2000;
-
-    asteptare = setTimeout(function() {
-        document.body.style.backgroundColor = "green";
-        mesaj.textContent = "ACUM! Click!";
-        timpStart = Date.now();
-        putemClick = true;
-    }, timpAleatoriu);
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  textAlign(CENTER, CENTER);
+  textSize(24);
+  noStroke();
+  test = new TestReactie();
 }
 
-buton.onclick = startTest;
-document.body.onkeydown = function(event) {
-    if (event.code === "Space") {
-        startTest();
-    }
-};
+function draw() {
+  test.update();
+  test.display();
+}
 
-document.body.onclick = function() {
-    if (putemClick) {
-        let timpFinal = Date.now();
-        let diferenta = timpFinal - timpStart;
-        mesaj.textContent = "Bravo!";
-        rezultat.textContent = "Ai reacționat în " + diferenta + " ms";
-        putemClick = false;
-        buton.style.display = "inline";
-    } else if (mesaj.textContent === "Așteaptă culoarea verde...") {
-        clearTimeout(asteptare);
-        mesaj.textContent = "Prea devreme! Încearcă din nou.";
-        document.body.style.backgroundColor = "red";
-        buton.style.display = "inline";
-    }
-};
+function mousePressed() {
+  test.handleClick();
+}
 
-document.body.onkeydown = function(event) {
-    if (event.code === "KeyR") {
-        document.body.style.backgroundColor = "white";
-        mesaj.textContent = "Testează viteza de reacție";
-        buton.style.display = "inline";
+function keyPressed() {
+  if (key === ' ') {
+    test.startTest();
+  } else if (key === 'r' || key === 'R') {
+    test.resetTest();
+  }
+}
+
+class TestReactie {
+  constructor() {
+    this.stare = 'start';
+    this.mesaj = 'Apasa SPACE pentru a incepe testul';
+    this.rezultat = '';
+    this.putemClick = false;
+    this.timpStart = 0;
+    this.asteptare = null;
+  }
+
+  startTest() {
+    this.stare = 'asteapta';
+    this.mesaj = 'Asteapta culoarea verde...';
+    this.rezultat = '';
+    this.putemClick = false;
+    const timpAleatoriu = random(2000, 5000);
+    this.asteptare = setTimeout(() => {
+      this.stare = 'gata';
+      this.mesaj = 'ACUM! CLICK!';
+      this.timpStart = millis();
+      this.putemClick = true;
+    }, timpAleatoriu);
+  }
+
+  resetTest() {
+    if (this.asteptare) clearTimeout(this.asteptare);
+    this.stare = 'start';
+    this.mesaj = 'Apasa SPACE pentru a incepe testul';
+    this.rezultat = '';
+    this.putemClick = false;
+  }
+
+  handleClick() {
+    if (this.stare === 'gata' && this.putemClick) {
+      let timpFinal = millis();
+      let diferenta = floor(timpFinal - this.timpStart);
+      this.rezultat = `Ai reactionat in ${diferenta} ms`;
+      this.mesaj = 'Bravo!';
+      this.putemClick = false;
+      this.stare = 'rezultat';
+    } else if (this.stare === 'asteapta') {
+      clearTimeout(this.asteptare);
+      this.stare = 'preaDevreme';
+      this.mesaj = 'Prea devreme! Incearca din nou (R)';
+      this.putemClick = false;
     }
-};
+  }
+
+  update() {
+  }
+
+  display() {
+    if (this.stare === 'gata') {
+      background('green');
+    } else if (this.stare === 'preaDevreme') {
+      background('red');
+    } else {
+      background('gray');
+    }
+    fill('white');
+    text(this.mesaj, width / 2, height / 2);
+    if (this.rezultat) {
+      text(this.rezultat, width / 2, height / 2 + 60);
+    }
+  }
+}
